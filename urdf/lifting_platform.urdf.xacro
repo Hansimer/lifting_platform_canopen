@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:arg name="bus_config_path" default="$(find lifting_platform_canopen)/config/lifting_platform/bus.yml"/>
+  <xacro:arg name="master_dcf" default="$(find lifting_platform_canopen)/config/lifting_platform/master.dcf"/>
+  <xacro:arg name="can_interface_name" default="vcan0"/>
+  <xacro:arg name="prefix" default=""/>
+
+  <!-- ===== 硬件接口声明 ===== -->
+  <ros2_control name="CanopenControl" type="system">
+    <hardware>
+      <plugin>canopen_ros2_control/Cia402System</plugin>
+      <param name="bus_config">$(arg bus_config_path)</param>
+      <param name="master_config">$(arg master_dcf)</param>
+      <param name="can_interface_name">$(arg can_interface_name)</param>
+      <param name="master_bin"></param>
+    </hardware>
+    <joint name="$(arg prefix)updown">
+      <param name="node_id">2</param>
+    </joint>
+  </ros2_control>
+
+  <link name="base_link">
+    <inertial>
+      <origin xyz="-0.02 0.01 0.39" rpy="0 0 0"/>
+      <mass value="202"/>
+      <inertia ixx="55.29" ixy="0.14" ixz="7.69"
+               iyy="88.54" iyz="1.26" izz="12.81"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://lifting_platform_canopen/meshes/base_link.STL"/>
+      </geometry>
+      <material name="grey">
+        <color rgba="0.75294 0.75294 0.75294 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://lifting_platform_canopen/meshes/base_link.STL"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="column_Link">
+    <inertial>
+      <origin xyz="0.055649 0.0013223 0.0058328" rpy="0 0 0"/>
+      <mass value="20.43"/>
+      <inertia ixx="0.23" ixy="0" ixz="0.01"
+               iyy="0.3" iyz="0" izz="0.34"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://lifting_platform_canopen/meshes/column_Link.STL"/>
+      </geometry>
+      <material name="grey">
+        <color rgba="0.75294 0.75294 0.75294 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://lifting_platform_canopen/meshes/column_Link.STL"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="updown" type="prismatic">
+    <origin xyz="0 0 1.6" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="column_Link"/>
+    <axis xyz="0 0 -1"/>
+    <limit lower="0" upper="1.0" effort="930" velocity="0.3"/>
+    <dynamics damping="2.5" friction="15"/>
+  </joint>
+
+</robot>
