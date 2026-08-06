@@ -21,6 +21,9 @@
   <depend>canopen_402_driver</depend>
   <depend>canopen_ros2_control</depend>
   <depend>canopen_interfaces</depend>
+  <depend>std_srvs</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

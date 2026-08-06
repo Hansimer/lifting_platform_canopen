@@ -206,6 +206,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.actions import OpaqueFunction
+from launch.actions import TimerAction
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -312,12 +313,37 @@ def launch_setup(context, *args, **kwargs):
         arguments=["cia402_device_1_controller", "--controller-manager", "/controller_manager"],
     )
 
+    # CSP init node - delayed start to ensure controller services are ready
+    # This node will:
+    # 1. Wait for current position from /joint_states
+    # 2. Call init to initialize CANopen bus
+    # 3. Set target = current position (prevent motor jump)
+    # 4. Switch to CSP mode
+    # 5. Hold position for stabilization
+    csp_init_node = TimerAction(
+        period=5.0,  # Wait 5 seconds for controller_manager and services to be ready
+        actions=[
+            Node(
+                package="lifting_platform_canopen",
+                executable="csp_init_node",
+                name="csp_init_node",
+                output="screen",
+                parameters=[{
+                    "controller_name": "cia402_device_1_controller",
+                    "hold_count": 500,
+                    "max_retries": 3,
+                }],
+            ),
+        ],
+    )
+
     nodes_to_start = [
         control_node,
         robot_state_publisher_node,
         joint_state_broadcaster_spawner,
         lifting_platform_controller_spawner,
         cia402_device_controller_spawner,
+        csp_init_node,
     ]
 
     return nodes_to_start

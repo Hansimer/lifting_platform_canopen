@@ -32,6 +32,6 @@ lifting_platform_controller:
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
     constraints:
-      stopped_velocity_tolerance: 0.01
+      stopped_velocity_tolerance: 0.1
       goal_time: 5.0
-      updown: { trajectory: 0.05, goal: 0.005 }
+      updown: { trajectory: 1.0, goal: 0.5 }
