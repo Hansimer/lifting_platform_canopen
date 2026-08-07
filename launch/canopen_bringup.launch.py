@@ -300,6 +300,12 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
+    cia402_device_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["cia402_device_1_controller", "--controller-manager", "/controller_manager"],
+    )
+
     lifting_platform_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -307,19 +313,11 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
-    cia402_device_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["cia402_device_1_controller", "--controller-manager", "/controller_manager"],
-    )
-
     # CSP init node - delayed start to ensure controller services are ready
     # This node will:
-    # 1. Wait for current position from /joint_states
+    # 1. Wait for /joint_states to confirm motor communication
     # 2. Call init to initialize CANopen bus
-    # 3. Set target = current position (prevent motor jump)
-    # 4. Switch to CSP mode
-    # 5. Hold position for stabilization
+    # 3. Switch to CSP mode
     csp_init_node = TimerAction(
         period=5.0,  # Wait 5 seconds for controller_manager and services to be ready
         actions=[
@@ -330,7 +328,6 @@ def launch_setup(context, *args, **kwargs):
                 output="screen",
                 parameters=[{
                     "controller_name": "cia402_device_1_controller",
-                    "hold_count": 500,
                     "max_retries": 3,
                 }],
             ),

@@ -1,10 +1,8 @@
-# This config file is used by ros2_control
 controller_manager:
   ros__parameters:
     update_rate: 100  # Hz
     thread_priority: 90 # SCHED_FIFO priority for RT thread
     cpu_affinity: 2 # Pin RT thread to isolated core 2
-
 
     cia402_device_1_controller:
       type: canopen_ros2_controllers/Cia402DeviceController
@@ -31,7 +29,9 @@ lifting_platform_controller:
     state_publish_rate: 100.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
+    allowed_start_tolerance: 0.1
     constraints:
       stopped_velocity_tolerance: 0.1
       goal_time: 5.0
       updown: { trajectory: 1.0, goal: 0.5 }
+
