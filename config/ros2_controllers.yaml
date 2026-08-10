@@ -32,6 +32,6 @@ lifting_platform_controller:
     allowed_start_tolerance: 0.1
     constraints:
       stopped_velocity_tolerance: 0.1
-      goal_time: 5.0
+      goal_time: 30.0
       updown: { trajectory: 1.0, goal: 0.5 }
 

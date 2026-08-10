@@ -23,6 +23,7 @@ defaults:
     - {index: 0x1017, sub_index: 0, value: 0xC8}  # Heartbeat producer period: 200ms
     - {index: 0x6081, sub_index: 0, value: 1000}
     - {index: 0x6083, sub_index: 0, value: 2000}
+
   tpdo: # TPDO needed statusword, actual velocity, actual position, mode of operation
     1:
       enabled: true
@@ -59,3 +60,7 @@ defaults:
 nodes:
   cia402_device_1:
     node_id: 2
+    scale_pos_to_dev: 4000000.0
+    scale_pos_from_dev: 0.00000025
+    scale_vel_to_dev: 4000000.0
+    scale_vel_from_dev: 0.00000025

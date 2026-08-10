@@ -33,7 +33,7 @@ class MoveItBridge(Node):
 
         # ── 参数 ──
         self.declare_parameter("target", 0.5)
-        self.declare_parameter("duration", 5.0)
+        self.declare_parameter("duration", 300.0)
         self.declare_parameter("group", "lifting_platform")
         self.declare_parameter("joint", "updown")
 
@@ -83,7 +83,7 @@ class MoveItBridge(Node):
         req = MotionPlanRequest()
         req.group_name = self.group
         req.num_planning_attempts = 10
-        req.allowed_planning_time = 5.0
+        req.allowed_planning_time = 500.0
         req.max_velocity_scaling_factor = 0.5
         req.max_acceleration_scaling_factor = 0.5
 
