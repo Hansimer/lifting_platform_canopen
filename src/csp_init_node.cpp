@@ -123,7 +123,7 @@ private:
     }
     RCLCPP_INFO(this->get_logger(), "[Step 1/2] Init completed.");
 
-    rclcpp::sleep_for(500ms);
+    rclcpp::sleep_for(1s);
 
       //Step 2: Switch to CSP mode
     RCLCPP_INFO(this->get_logger(), "[Step 2/2] Waiting for cyclic_position_mode service...");

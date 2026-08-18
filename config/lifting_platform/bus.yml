@@ -15,14 +15,27 @@ defaults:
   package: "canopen_402_driver"
   period: 10
   revision_number: 0
-  boot_timeout_ms: 5000
+  boot_timeout_ms: 8000
   sdo:
     - {index: 0x6040, sub_index: 0, value: 0x86}
-    - {index: 0x1006, sub_index: 0, value: 10000}
-    - {index: 0x1016, sub_index: 1, value: 0x01012C}  # Heartbeat consumer: node 1, timeout 300ms
-    - {index: 0x1017, sub_index: 0, value: 0xC8}  # Heartbeat producer period: 200ms
-    - {index: 0x6081, sub_index: 0, value: 1000}
-    - {index: 0x6083, sub_index: 0, value: 2000}
+    - {index: 0x100C, sub_index: 0, value: 0x3E8}
+    - {index: 0x100D, sub_index: 0, value: 0x03}
+    # 节点守护 COB-ID = 0x700 + node_id(2) = 0x702。
+    # 之前误写成 0x701（节点 1 的 ID），导致从站在 0x701 上回复守护帧、
+    # 主站却在 0x702 上等响应，每 3s（0x100C×0x100D）守护超时一次，
+    # 主站反复 RESET_COMM + START，日志每 3s 刷一条 "Switched NMT state to START"。
+    - {index: 0x100E, sub_index: 0, value: 0x702}
+    - {index: 0x6007, sub_index: 0, value: 0x01}
+    - {index: 0x6081, sub_index: 0, value: 19329004}
+    - {index: 0x6083, sub_index: 0, value: 19378}
+    - {index: 0x6084, sub_index: 0, value: 19378}
+
+    # - {index: 0x1006, sub_index: 0, value: 10000}
+    # - {index: 0x1016, sub_index: 1, value: 0x01012C}  # Heartbeat consumer: node 1, timeout 300ms
+    # - {index: 0x1017, sub_index: 0, value: 0xC8}  # Heartbeat producer period: 200ms
+    # - {index: 0x6081, sub_index: 0, value: 1000}
+    # - {index: 0x6083, sub_index: 0, value: 2000}
+
 
   tpdo: # TPDO needed statusword, actual velocity, actual position, mode of operation
     1:
@@ -60,7 +73,7 @@ defaults:
 nodes:
   cia402_device_1:
     node_id: 2
-    scale_pos_to_dev: 1000.0
-    scale_pos_from_dev: 0.001
-    scale_vel_to_dev: 1000.0
-    scale_vel_from_dev: 0.001
+    scale_pos_to_dev: 11797483.0
+    scale_pos_from_dev: 0.0000000847647
+    scale_vel_to_dev: 193290044.5
+    scale_vel_from_dev: 0.0000000051736
