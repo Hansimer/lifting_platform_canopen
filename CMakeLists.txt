@@ -9,6 +9,7 @@ find_package(ament_cmake REQUIRED)
 find_package(lely_core_libraries REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 # 生成 bin 文件（cogen 预处理 + dcfgen 生成）
@@ -19,6 +20,7 @@ add_executable(csp_init_node src/csp_init_node.cpp)
 ament_target_dependencies(csp_init_node
   rclcpp
   std_srvs
+  std_msgs
   sensor_msgs
 )
 install(TARGETS csp_init_node
