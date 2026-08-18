@@ -1,8 +1,31 @@
-controller_manager:
+# Parameters for the lifting_platform CANopen system.
+# ros2_control_node runs in the "lifting_platform" namespace, so all parameter
+# keys must use the FULL node paths.
+#
+# - Controller TYPES are declared under the controller_manager node:
+#   /lifting_platform/controller_manager/ros__parameters/<name>/type
+# - Each controller's OWN parameters live under the controller's full node name:
+#   /lifting_platform/<controller_name>/ros__parameters/...
+#
+# =============================================================================
+# 实时性设计（隔离核 2、5，内核 preempt=full）
+#
+#   中间层 —— JointTrajectoryController (JTC)
+#     接收 MoveIt 轨迹 -> 按时间戳插值目标位置 -> 写入 position 命令接口
+#     update_rate=100Hz(10ms)，与 CANopen 通信周期(10ms) 完全对齐
+#
+#   实时层 —— Cia402System 硬件读写 + lely CANopen master
+#     CANopen SYNC/PDO 10ms 周期（sync_period=10000µs，见 bus.yml）
+#     controller_manager RT 线程绑隔离核 5（SCHED_FIFO 85）
+#     lely master（SYNC 生成/PDO 交换）由 launch 中 taskset -c 2,5 限定在隔离核
+#
+#   核分配: 核5 = RT 控制环（JTC + 硬件读写）；核2 = lely master 等进程内线程
+# =============================================================================
+/lifting_platform/controller_manager:
   ros__parameters:
-    update_rate: 100  # Hz
-    thread_priority: 90 # SCHED_FIFO priority for RT thread
-    cpu_affinity: 2 # Pin RT thread to isolated core 2
+    update_rate: 100  # Hz —— 与 CANopen 10ms 通信周期对齐
+    thread_priority: 85 # SCHED_FIFO priority for RT thread
+    cpu_affinity: 5     # 绑定 RT 线程到隔离核 5
 
     cia402_device_1_controller:
       type: canopen_ros2_controllers/Cia402DeviceController
@@ -10,14 +33,31 @@ controller_manager:
     lifting_platform_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
-    joint_state_broadcaster:
+    lifting_joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-cia402_device_1_controller:
+    lifting_forward_position_controller:
+      type: forward_command_controller/ForwardCommandController
+
+# forward 控制器配置保留（设计保留）。
+# 注意：JTC 与 forward 控制器都会占用 updown/position 命令接口，
+#       二者不能同时激活。默认由 launch 启动 JTC（轨迹执行）；
+#       手动调试时可先停 JTC 再 spawn forward。
+/lifting_platform/lifting_forward_position_controller:
+  ros__parameters:
+    joints:
+      - updown
+    interface_name: position
+
+/lifting_platform/cia402_device_1_controller:
   ros__parameters:
     joint: updown
 
-lifting_platform_controller:
+# =============================================================================
+# 中间层 —— Joint Trajectory Controller
+#   - 10ms RT 控制环内按轨迹时间戳插值目标位置（与 CANopen 10ms 对齐）
+# =============================================================================
+/lifting_platform/lifting_platform_controller:
   ros__parameters:
     joints:
       - updown
@@ -34,4 +74,6 @@ lifting_platform_controller:
       stopped_velocity_tolerance: 0.1
       goal_time: 30.0
       updown: { trajectory: 1.0, goal: 0.5 }
+
+
 

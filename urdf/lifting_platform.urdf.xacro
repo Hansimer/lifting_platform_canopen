@@ -73,7 +73,7 @@
     <parent link="base_link"/>
     <child link="column_Link"/>
     <axis xyz="0 0 -1"/>
-    <limit lower="0" upper="1.0" effort="930" velocity="0.02"/>
+    <limit lower="0" upper="1.0" effort="930" velocity="2"/>
     <dynamics damping="2.5" friction="15"/>
   </joint>
 

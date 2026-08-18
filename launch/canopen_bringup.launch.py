@@ -277,39 +277,82 @@ def launch_setup(context, *args, **kwargs):
     robot_description = {"robot_description": robot_description_content}
 
     # control node
+    # 实时性优化：整个进程限定在隔离核 {2,5} 上运行。
+    #   - RT 控制环线程（JTC + 硬件读写）由 controller_manager 参数
+    #     thread_priority/cpu_affinity 单独绑定核 5（SCHED_FIFO 85）
+    #   - lely CANopen master（SYNC 生成/PDO 交换）及进程内其他线程落在核 2，
+    #     不与 RT 控制环竞争
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
+        namespace="lifting_platform",
         parameters=[robot_description, ros2_control_config],
         output="screen",
+        prefix=["taskset -c 2,5 "],
     )
 
     # robot state publisher
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
+        namespace="lifting_platform",
         output="both",
         parameters=[robot_description],
     )
 
     # controller spawners
+    # NOTE: use RELATIVE controller_manager name so that it is expanded with the
+    # node namespace (/lifting_platform/controller_manager) and does NOT collide
+    # with another ROS2 system's root-level /controller_manager on the same network.
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
+        namespace="lifting_platform",
+        arguments=["lifting_joint_state_broadcaster", "--controller-manager", "controller_manager"],
         output="screen",
     )
 
     cia402_device_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["cia402_device_1_controller", "--controller-manager", "/controller_manager"],
+        namespace="lifting_platform",
+        arguments=["cia402_device_1_controller", "--controller-manager", "controller_manager"],
     )
 
+    # 中间层 —— Joint Trajectory Controller (JTC)
+    # 接收 MoveIt 轨迹（/lifting_platform/lifting_platform_controller/follow_joint_trajectory），
+    # 在 RT 控制环内按时间戳插值目标位置并写入 position 命令接口。
+    # 默认以 --inactive 加载（不占用 updown/position 接口，forward 控制器处于激活态）。
+    # 需要 MoveIt 轨迹执行时，先停 forward 再激活 JTC：
+    #   ros2 run controller_manager deactivate_controller \
+    #     lifting_forward_position_controller --controller-manager /lifting_platform/controller_manager
+    #   ros2 run controller_manager activate_controller \
+    #     lifting_platform_controller --controller-manager /lifting_platform/controller_manager
     lifting_platform_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["lifting_platform_controller", "--controller-manager", "/controller_manager"],
+        namespace="lifting_platform",
+        arguments=[
+            "lifting_platform_controller",
+            "--controller-manager", "controller_manager",
+            "--inactive",
+        ],
+        output="screen",
+    )
+
+    # forward 控制器（设计保留，恢复 spawner，默认激活用于手动位置控制）
+    # 注意：forward 与 JTC 共用 updown/position 命令接口，不能同时激活。
+    # 通过话题发布目标位置：
+    #   ros2 topic pub /lifting_forward_position_controller/commands \
+    #     std_msgs/msg/Float64MultiArray "{data: [0.3]}"
+    lifting_forward_position_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        namespace="lifting_platform",
+        arguments=[
+            "lifting_forward_position_controller",
+            "--controller-manager", "controller_manager",
+        ],
         output="screen",
     )
 
@@ -330,6 +373,7 @@ def launch_setup(context, *args, **kwargs):
                     "controller_name": "cia402_device_1_controller",
                     "max_retries": 3,
                 }],
+                namespace="lifting_platform",
             ),
         ],
     )
@@ -338,8 +382,9 @@ def launch_setup(context, *args, **kwargs):
         control_node,
         robot_state_publisher_node,
         joint_state_broadcaster_spawner,
-        lifting_platform_controller_spawner,
         cia402_device_controller_spawner,
+        lifting_platform_controller_spawner,       # JTC，--inactive 加载
+        lifting_forward_position_controller_spawner,  # forward，默认激活
         csp_init_node,
     ]
 

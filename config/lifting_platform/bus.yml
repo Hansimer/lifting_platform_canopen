@@ -60,7 +60,7 @@ defaults:
 nodes:
   cia402_device_1:
     node_id: 2
-    scale_pos_to_dev: 4000000.0
-    scale_pos_from_dev: 0.00000025
-    scale_vel_to_dev: 4000000.0
-    scale_vel_from_dev: 0.00000025
+    scale_pos_to_dev: 1000.0
+    scale_pos_from_dev: 0.001
+    scale_vel_to_dev: 1000.0
+    scale_vel_from_dev: 0.001

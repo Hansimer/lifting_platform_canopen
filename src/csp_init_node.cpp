@@ -35,10 +35,13 @@ public:
     RCLCPP_INFO(this->get_logger(), "  Controller: %s", controller_name_.c_str());
     RCLCPP_INFO(this->get_logger(), "  Max retries: %d", max_retries_);
 
-    // Service names
-    std::string init_srv = "/" + controller_name_ + "/init";
-    std::string csp_mode_srv = "/" + controller_name_ + "/cyclic_position_mode";
-    std::string recover_srv = "/" + controller_name_ + "/recover";
+    // Service names - use RELATIVE names so they are expanded with this node's
+    // namespace (/lifting_platform/cia402_device_1_controller/init). Absolute
+    // names would resolve to the root namespace and collide with other ROS2
+    // systems on the same network / domain.
+    std::string init_srv = controller_name_ + "/init";
+    std::string csp_mode_srv = controller_name_ + "/position_mode";
+    std::string recover_srv = controller_name_ + "/recover";
 
     // Create a separate callback group for service clients
     service_cbg_ = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -49,8 +52,9 @@ public:
     recover_client_ = this->create_client<Trigger>(recover_srv, rmw_qos_profile_default, service_cbg_);
 
     // Subscribe to joint_states to confirm motor communication is alive
+    // (relative name -> /lifting_platform/joint_states in this node's namespace)
     joint_state_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
-      "/joint_states", 10,
+      "joint_states", 10,
       [this](const sensor_msgs::msg::JointState::SharedPtr msg) {
         if (!msg->position.empty() && !joint_state_received_) {
           joint_state_received_ = true;
@@ -102,11 +106,11 @@ private:
 
     // Step 1: Init CANopen bus
     RCLCPP_INFO(this->get_logger(), "[Step 1/2] Waiting for init service...");
-    wait_for_service(init_client_, "/" + controller_name_ + "/init");
+    wait_for_service(init_client_, controller_name_ + "/init");
     RCLCPP_INFO(this->get_logger(), "[Step 1/2] Initializing CANopen motor...");
     if (!call_trigger(init_client_, "init")) {
       RCLCPP_WARN(this->get_logger(), "Init failed, trying recover...");
-      wait_for_service(recover_client_, "/" + controller_name_ + "/recover");
+      wait_for_service(recover_client_, controller_name_ + "/recover");
       if (!call_trigger(recover_client_, "recover")) {
         RCLCPP_ERROR(this->get_logger(), "Recover failed. Aborting.");
         return;
@@ -123,7 +127,7 @@ private:
 
       //Step 2: Switch to CSP mode
     RCLCPP_INFO(this->get_logger(), "[Step 2/2] Waiting for cyclic_position_mode service...");
-    wait_for_service(csp_mode_client_, "/" + controller_name_ + "/cyclic_position_mode");
+    wait_for_service(csp_mode_client_, controller_name_ + "/cyclic_position_mode");
     RCLCPP_INFO(this->get_logger(), "[Step 2/2] Switching to CSP mode...");
     bool csp_ok = false;
     for (int retry = 0; retry < max_retries_; retry++) {

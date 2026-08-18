@@ -46,10 +46,12 @@ class MoveItBridge(Node):
         # MoveIt2 规划
         self._plan_client = ActionClient(self, MoveGroup, "move_action")
         # 控制器执行
+        # JTC 运行在 /lifting_platform 命名空间下，完整 action 路径为：
+        #   /lifting_platform/lifting_platform_controller/follow_joint_trajectory
         self._exec_client = ActionClient(
             self,
             FollowJointTrajectory,
-            "/lifting_platform_controller/follow_joint_trajectory",
+            "/lifting_platform/lifting_platform_controller/follow_joint_trajectory",
         )
 
         self.get_logger().info(f"目标: {self.joint} = {self.target:.3f}m")
