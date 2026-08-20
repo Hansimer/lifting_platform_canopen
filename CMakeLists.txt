@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 # 生成 bin 文件（cogen 预处理 + dcfgen 生成）
 cogen_dcf(lifting_platform)
@@ -22,6 +23,7 @@ ament_target_dependencies(csp_init_node
   std_srvs
   std_msgs
   sensor_msgs
+  ament_index_cpp
 )
 install(TARGETS csp_init_node
   DESTINATION lib/${PROJECT_NAME}
@@ -38,6 +40,11 @@ install(DIRECTORY
   meshes
   urdf
   DESTINATION share/${PROJECT_NAME}
+)
+
+# 安装 log 目录
+install(DIRECTORY log
+  DESTINATION log/${PROJECT_NAME}
 )
 
 

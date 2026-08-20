@@ -26,7 +26,8 @@ defaults:
     # 主站反复 RESET_COMM + START，日志每 3s 刷一条 "Switched NMT state to START"。
     - {index: 0x100E, sub_index: 0, value: 0x702}
     - {index: 0x6007, sub_index: 0, value: 0x01}
-    - {index: 0x6081, sub_index: 0, value: 19329004}
+    # - {index: 0x6081, sub_index: 0, value: 19329004} //
+    - {index: 0x6081, sub_index: 0, value: 9664502} 
     - {index: 0x6083, sub_index: 0, value: 19378}
     - {index: 0x6084, sub_index: 0, value: 19378}
 
